@@ -384,7 +384,7 @@ class JKL_Site_Linker_Posttype {
         add_action( 'template_redirect', array( &$this, 'count_and_redirect' ) );
         
         // Add Dashboard Widget for JKL Site Linker
-        add_action( 'wp_dashboard_setup', array( &$this, 'linker_add_dashboard_widget' ) );
+        add_action( 'wp_dashboard_setup', array( &$this, 'jklsl_add_dashboard_widget' ) );
         
         // Add order by Clicks
         add_action( 'pre_get_posts', array( &$this, 'clicks_orderby' ) );

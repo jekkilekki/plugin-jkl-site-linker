@@ -40,8 +40,11 @@
 
 /**
  * Plugin Notes:
- * 
- * 
+ * 1. Separate out Model, View, Controller stuff - subdivide out classes, specific functionality, etc
+ * 2. Options page/settings
+ *      1. Default = Display links as thumbnails + site title + description + user notes + ???
+ *      2. Option2 = Display links as <ol> or <ul> with or without thumbnails
+ * 3. Change plugin name to 'JKL_Links_Collector' or 'JKL_Links_Collections'?
  */
 
 /* Prevent direct access */
