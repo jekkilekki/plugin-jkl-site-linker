@@ -156,28 +156,32 @@ class JKL_Site_Linker_Posttype {
         
         echo '<div class="jklsl-links-list-div">';
         echo '<ol id="jklsl-links-list" class="jklsl-list connectedSortable">';
-        echo '<li class="sortable">';
         
-        $field_id = '_jklsl_redirect';
-        echo strtr( '<!--<p><strong><label for="{name}">{label}</label></strong></p>--><span><input type="url" id="{name}" name="{name}" value="{value}" placeholder="{placeholder}" class="large-text"></span>', array(
-                '{label}'   => __( 'Sites to link to:', 'jkl-site-linker' ),
-                '{name}'    => $field_id,
-                '{placeholder}' => __( 'http://link.com/', 'jkl-site-linker' ),
-                '{value}'       => esc_attr( get_post_meta( $post->ID, $field_id, true ) ),
-        ) );
-        
-        // $counter = absint( get_post_meta( $post->ID, '_jklsl_count', true ) );
-        // printf( '<span class="description">' . __( 'This Link has been accessed <strong>%d</strong> times.', 'jkl-site-linker' ) . '</span>', $counter );
-        
-        $description = '_jklsl_description';
-        echo strtr( '<span><textarea id="{name}" name="{name}" placeholder="{placeholder}" class="large-text">{value}</textarea></span>', array(
-                '{name}'    => $description,
-                '{placeholder}' => __( 'Enter notes about the site here.', 'jkl-site-linker' ),
-                '{value}'       => esc_attr( get_post_meta( $post->ID, $description, true ) ),
-        ) );
-        
-        echo '<input type="submit" name="jklsl-link-label-1-remove" id="jklsl-link-1-remove" class="jklsl-remove-item button hidden" value="x">';
-        echo '</li>';
+        $links = get_post_meta( get_the_ID(), 'jklsl-links-list', true );
+        var_dump( $_POST );
+        foreach ( $links as $link ) :
+            echo '<li class="sortable">';
+
+            $field_id = $link;
+            echo strtr( '<input type="url" id="{name}" name="{name}" value="{value}" placeholder="{placeholder}" class="large-text">', array(
+                    '{name}'    => $field_id,
+                    '{placeholder}' => __( 'http://link.com/', 'jkl-site-linker' ),
+                    '{value}'       => esc_attr( get_post_meta( $post->ID, $field_id, true ) ),
+            ) );
+
+            // $counter = absint( get_post_meta( $post->ID, '_jklsl_count', true ) );
+            // printf( '<span class="description">' . __( 'This Link has been accessed <strong>%d</strong> times.', 'jkl-site-linker' ) . '</span>', $counter );
+
+//            $description = 'jklsl-link-description-1';
+//            echo strtr( '<span><textarea id="{name}" name="{name}" placeholder="{placeholder}" class="large-text">{value}</textarea></span>', array(
+//                    '{name}'    => $description,
+//                    '{placeholder}' => __( 'Enter notes about the site here.', 'jkl-site-linker' ),
+//                    '{value}'       => esc_attr( get_post_meta( $post->ID, $description, true ) ),
+//            ) );
+
+            echo '<input type="submit" name="jklsl-link-label-1-remove" id="jklsl-link-1-remove" class="jklsl-remove-item button hidden" value="x">';
+            echo '</li>';
+        endforeach;
         
         echo '</ol>';
         echo '<input type="submit" class="jklsl-add-item button" value="+">';
@@ -185,24 +189,99 @@ class JKL_Site_Linker_Posttype {
         
     }
     
+    /**
+     * Verifies that the post type that's being saved is a JKL_Site_Linker post type.
+     * @link    http://code.tutsplus.com/tutorials/creating-maintainable-wordpress-meta-boxes-verify-and-sanitize--cms-22488
+     * 
+     * @since   0.0.1
+     * @access  private
+     * @return  bool    Return true if the current post type is a 'jkl_site_linker' type; false otherwise.
+     */
+    private function is_valid_post_type() {
+        return ! empty( $_POST[ 'post-type' ] ) && 'jkl_site_linker' == $_POST[ 'post_type' ];
+    }
+    
+    /**
+     * Determines whether or not the current user has the ability to save meta data for this post.
+     * @link    http://code.tutsplus.com/tutorials/creating-maintainable-wordpress-meta-boxes-verify-and-sanitize--cms-22488
+     * 
+     * @since   0.0.1
+     * 
+     * @access  private
+     * @param   int     $post_id        The ID of the post being saved
+     * @param   string  $nonce_action   The name of the action associated with the none
+     * @param   string  $nonce_id       The ID of the nonce field
+     * @return  bool                    Whether or not the user has the ability to save this post
+     */
+    private function user_can_save( $post_id, $nonce_action, $nonce_id ) {
+        
+        $is_autosave = wp_is_post_autosave( $post_id );
+        $is_revision = wp_is_post_revision( $post_id );
+        $is_valid_nonce = ( isset ( $_POST[ $nonce_action ] ) && wp_verify_none( $_POST[ $nonce_action ], $nonce_id ) );
+        
+        // Return true if the user is able to save, false otherwise
+        return ! ( $is_autosave || $is_revision ) && $is_valid_nonce;
+    }
+    
+    /**
+     * Sanitizes and serializes the information associated with this Post.
+     * @link    http://code.tutsplus.com/tutorials/creating-maintainable-wordpress-meta-boxes-verify-and-sanitize--cms-22488
+     * 
+     * @since   0.0.1
+     * 
+     * @param   int     $post_id    The ID of the post that's currently being edited.
+     * @return  void
+     */
     public function save_post( $post_id ) {
         
-        if ( ! isset( $_POST[ '_jklsl_meta_box_nonce' ] ) || ! wp_verify_nonce( $_POST[ '_jklsl_meta_box_nonce' ], basename( __FILE__ ) ) )
+        /*
+         * If we're not working with a 'jkl_site_linker' post type or the user
+         * doesn't have permission to save, then we exit the function.
+         */
+        if ( ! $this->is_valid_post_type() || ! $this->user_can_save( $post_id, '_jklsl_meta_box_nonce', basename( __FILE__ ) ) ) {
             return;
+        }
         
-        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
-            return;
+//        if ( ! isset( $_POST[ '_jklsl_meta_box_nonce' ] ) || ! wp_verify_nonce( $_POST[ '_jklsl_meta_box_nonce' ], basename( __FILE__ ) ) )
+//            return;
+//        
+//        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+//            return;
+//        
+//        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) 
+//            return;
+//        
+//        if ( defined( 'DOING_CRON' ) && DOING_CRON ) 
+//            return;
         
-        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) 
-            return;
+//        if ( isset( $_POST[ '_jklsl_redirect' ] ) )
+//            update_post_meta( $post_id, '_jklsl_redirect', $_POST[ '_jklsl_redirect' ] );
+//        else 
+//            delete_post_meta( $post_id, '_jklsl_redirect' );
         
-        if ( defined( 'DOING_CRON' ) && DOING_CRON ) 
-            return;
-        
-        if ( isset( $_POST[ '_jklsl_redirect' ] ) )
-            update_post_meta( $post_id, '_jklsl_redirect', $_POST[ '_jklsl_redirect' ] );
-        else 
-            delete_post_meta( $post_id, '_jklsl_redirect' );
+        // If the Link inputs exist, iterate through them and sanitize them
+        if ( ! empty( $_POST[ 'jklsl-links-list' ] ) ) {
+            
+            $links = $_POST[ 'jklsl-links-list' ];
+            $sanitized_links = array();
+            foreach ( $links as $link ) {
+                
+                $link = esc_url( strip_tags( $link ) );
+                if ( ! empty( $link ) ) {
+                    $sanitized_links[] = $link;
+                }
+                
+            }
+            
+            update_post_meta( $post_id, 'jklsl-links-list', $sanitized_links );
+            
+        } else {
+            
+            if ( '' !== get_post_meta( $post_id, 'jklsl-links-list', true ) ) {
+                delete_post_meta( $post_id, 'jklsl-links-list' );
+            }
+            
+        }
         
     }
     
@@ -350,7 +429,7 @@ class JKL_Site_Linker_Posttype {
         if ( ! $include_style )
             return;
         
-        wp_enqueue_style( 'jklsl-dashboard-widget-styles', JKLSL_PLUGIN_URL . '/css/style.css' );
+        wp_enqueue_style( 'jklsl-dashboard-widget-styles', JKLSL_PLUGIN_URL . '/css/admin-style.css' );
     }
     
     public function jklsl_enqueue_scripts() {

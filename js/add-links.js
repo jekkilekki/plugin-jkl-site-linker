@@ -18,7 +18,7 @@ function addLink( $ ) {
      * First, count the number of input fields that already exist.
      * This is how we set the name and ID attributes of the element.
      */
-    listCount = $( this ).next( '.jklsl-link' ).children().length;
+    listCount = $( '#jklsl-links-list' ).children().length;
     listCount++;
     // alert( 'building element' );
     // Next, create the actual input element and return it
@@ -28,16 +28,17 @@ function addLink( $ ) {
     $inputElement = 
             $( '<input>' )
             .attr( 'type', 'url' )
-            .attr( 'name', 'jklsl-link-label-' + listCount )
+            .attr( 'name', 'jklsl-link-label[' + listCount + ']' )
             .attr( 'id', 'jklsl-link-' + listCount )
             .attr( 'class', 'jklsl-link large-text' )
             .attr( 'placeholder', 'http://link.com' )
             .attr( 'value', '' );
-    $textareaElement = 
-            $( '<textarea></textarea>' )
-            .attr( 'name', 'jklsl-link-description-' + listCount )
-            .attr( 'class', 'jklsl-link-description large-text' )
-            .attr( 'placeholder', 'Enter notes about the site here.' );
+//    $textareaElement = 
+//            $( '<textarea></textarea>' )
+//            .attr( 'name', 'jklsl-link-description[' + listCount + ']' )
+//            .attr( 'id', 'jklsl-link-description-' + listCount )
+//            .attr( 'class', 'jklsl-link-description large-text' )
+//            .attr( 'placeholder', 'Enter notes about the site here.' );
     $removeElement = 
             $( '<input>' )
             .attr( 'type', 'submit' )
@@ -46,7 +47,7 @@ function addLink( $ ) {
             .attr( 'class', 'jklsl-remove-item button' )
             .attr( 'value', 'x' );
     // alert( 'returning element' );
-    return $listElement.append( $inputElement.add( $textareaElement ).add( $removeElement ) );
+    return $listElement.append( $inputElement/*.add( $textareaElement )*/.add( $removeElement ) );
     
 } // END addLink($)
 
